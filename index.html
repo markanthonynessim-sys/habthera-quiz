@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Habthera — Your Personalized GLP-1 Nutrition Plan</title>
+  <meta name="description" content="Answer 6 quick questions and get a clinician-crafted GLP-1 nutrition plan tailored to you.">
+  <style>
+    /* ─── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+
+    /* ─── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --green:      #2D5016;
+      --green-light:#3a6820;
+      --green-pale: #e8f0e0;
+      --cream:      #F5F0E8;
+      --gold:       #C9A84C;
+      --gold-dark:  #a88530;
+      --text:       #1a1a1a;
+      --muted:      #6b7280;
+      --border:     #d6cfc0;
+      --radius:     12px;
+      --shadow:     0 4px 24px rgba(45,80,22,.12);
+    }
+
+    /* ─── Base ───────────────────────────────────────────────── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 60px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────── */
+    .site-header {
+      width: 100%;
+      text-align: center;
+      padding: 28px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+      background: #fff;
+    }
+    .site-header .brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: .18em;
+      color: var(--green);
+      text-transform: uppercase;
+    }
+    .site-header .sub {
+      font-size: .65rem;
+      letter-spacing: .25em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* ─── Progress bar ───────────────────────────────────────── */
+    .progress-bar-wrap {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: var(--green);
+      z-index: 10;
+      display: none;
+    }
+    .progress-bar-wrap.visible { display: block; }
+    .progress-label {
+      font-size: .65rem;
+      letter-spacing: .1em;
+      color: var(--gold);
+      text-align: center;
+      padding: 6px 0 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .progress-track {
+      height: 5px;
+      background: rgba(255,255,255,.2);
+      margin: 0 20px 8px;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+
+    /* ─── Card ───────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 640px;
+      margin: 0 16px;
+    }
+
+    /* ─── Intro screen ───────────────────────────────────────── */
+    .intro-icon {
+      width: 64px; height: 64px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 1.8rem;
+    }
+    .intro-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: var(--green);
+      text-align: center;
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .intro-sub {
+      text-align: center;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+    .notice {
+      background: var(--green-pale);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: .82rem;
+      color: var(--green);
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .notice strong { display: block; margin-bottom: 4px; }
+
+    /* ─── Pillar pills ───────────────────────────────────────── */
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .pillar-pill {
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: .84rem;
+      color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pillar-pill::before { content: '●'; color: var(--gold); font-size: .6rem; }
+
+    /* ─── Quiz step ──────────────────────────────────────────── */
+    .step-label {
+      font-size: .7rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .step-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 24px;
+    }
+    .question { margin-bottom: 22px; }
+    .question p {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .option-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .option-group.required-error .opt-btn { border-color: #e74c3c; }
+
+    .opt-btn {
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: .85rem;
+      cursor: pointer;
+      color: var(--text);
+      transition: all .15s;
+      line-height: 1.3;
+    }
+    .opt-btn:hover { border-color: var(--green); background: var(--green-pale); }
+    .opt-btn.selected {
+      border-color: var(--green);
+      background: var(--green);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ─── Text inputs (step 6) ───────────────────────────────── */
+    .text-input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: .95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+      font-family: inherit;
+    }
+    .text-input:focus { border-color: var(--green); }
+    .text-input.error { border-color: #e74c3c; }
+    .input-hint {
+      font-size: .78rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .field-error {
+      font-size: .78rem;
+      color: #e74c3c;
+      margin-top: 6px;
+      display: none;
+    }
+    .field-error.visible { display: block; }
+
+    /* ─── Navigation buttons ─────────────────────────────────── */
+    .nav-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .btn-back {
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: .9rem;
+      cursor: pointer;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .btn-back:hover { border-color: var(--green); color: var(--green); }
+    .btn-next {
+      flex: 1;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 20px;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-next:hover { background: var(--green-light); }
+    .btn-next:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-start {
+      width: 100%;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 15px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-start:hover { background: var(--green-light); }
+    .btn-submit {
+      flex: 1;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 20px;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-submit:hover { background: var(--gold-dark); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ─── Loading screen ─────────────────────────────────────── */
+    .loading-screen { text-align: center; padding: 20px 0; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--green-pale);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .9s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-screen h3 {
+      font-size: 1.15rem;
+      color: var(--green);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .loading-screen p { color: var(--muted); font-size: .9rem; line-height: 1.5; }
+
+    /* ─── Error screen ───────────────────────────────────────── */
+    .error-screen { text-align: center; padding: 10px 0; }
+    .error-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .error-screen h3 {
+      font-size: 1.2rem;
+      color: var(--green);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .error-box {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .error-box strong { display: block; color: #b91c1c; margin-bottom: 4px; font-size: .9rem; }
+    .error-box span { color: #7f1d1d; font-size: .85rem; line-height: 1.5; }
+    .btn-retry {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-retry:hover { background: var(--green-light); }
+
+    /* ─── Result screen ──────────────────────────────────────── */
+    .result-header {
+      background: var(--green);
+      color: #fff;
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 24px;
+    }
+    .result-header .label {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .result-header h2 { font-size: 1.3rem; line-height: 1.3; }
+    .result-body { font-size: .95rem; line-height: 1.75; color: var(--text); }
+    .result-body h3 { color: var(--green); font-size: 1rem; margin: 18px 0 6px; }
+    .result-body p { margin-bottom: 10px; }
+    .result-body ul { padding-left: 20px; margin-bottom: 10px; }
+    .result-body li { margin-bottom: 5px; }
+    .result-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+    .btn-print {
+      flex: 1;
+      min-width: 140px;
+      border: 1.5px solid var(--green);
+      background: #fff;
+      color: var(--green);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-print:hover { background: var(--green-pale); }
+    .btn-restart {
+      flex: 1;
+      min-width: 140px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: .88rem;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-restart:hover { border-color: var(--green); color: var(--green); }
+
+    /* ─── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .card { padding: 24px 18px; }
+      .pillar-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="brand">Habthera</div>
+    <div class="sub">Nutrition</div>
+  </header>
+
+  <!-- Progress bar (hidden on intro) -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-label" id="progressLabel">Step 1 of 6</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:16.6%"></div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 0: Intro ─────────────────────────────────────── -->
+  <div class="card" id="screen-intro">
+    <div class="intro-icon">🌿</div>
+    <h1 class="intro-title">Your Personalized GLP-1 Nutrition Plan</h1>
+    <p class="intro-sub">Answer 6 quick screens about your journey and we'll generate a clinician-crafted nutrition plan tailored to you — in under 2 minutes.</p>
+    <div class="notice">
+      <strong>⚠ Important Notice</strong>
+      This quiz is for personalization purposes only and does not constitute medical advice. All responses are used solely to personalize your nutrition recommendations.
+    </div>
+    <div class="pillar-grid">
+      <div class="pillar-pill">Muscle Health</div>
+      <div class="pillar-pill">Brain &amp; Energy</div>
+      <div class="pillar-pill">Gut Comfort</div>
+      <div class="pillar-pill">Skin &amp; Recovery</div>
+    </div>
+    <button class="btn-start" onclick="goToStep(1)">Start My Assessment →</button>
+  </div>
+
+  <!-- ── SCREEN 1: Your Journey ─────────────────────────────── -->
+  <div class="card" id="screen-1" style="display:none">
+    <div class="step-label">Step 1 of 6</div>
+    <h2 class="step-title">Your Journey</h2>
+
+    <div class="question">
+      <p>How long have you been on your weight loss journey?</p>
+      <div class="option-group" data-key="journeyDuration" data-multi="false">
+        <button class="opt-btn" data-value="Just starting">Just starting</button>
+        <button class="opt-btn" data-value="1–6 months">1–6 months</button>
+        <button class="opt-btn" data-value="6–12 months">6–12 months</button>
+        <button class="opt-btn" data-value="Over a year">Over a year</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>How much weight have you lost so far?</p>
+      <div class="option-group" data-key="weightLost" data-multi="false">
+        <button class="opt-btn" data-value="Just starting">Just starting</button>
+        <button class="opt-btn" data-value="Less than 10 lbs">Less than 10 lbs</button>
+        <button class="opt-btn" data-value="10–25 lbs">10–25 lbs</button>
+        <button class="opt-btn" data-value="25–50 lbs">25–50 lbs</button>
+        <button class="opt-btn" data-value="50+ lbs">50+ lbs</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>What's your primary goal right now?</p>
+      <div class="option-group" data-key="primaryGoal" data-multi="false">
+        <button class="opt-btn" data-value="Lose fat">Lose fat</button>
+        <button class="opt-btn" data-value="Preserve muscle">Preserve muscle</button>
+        <button class="opt-btn" data-value="Feel better">Feel better</button>
+        <button class="opt-btn" data-value="All of the above">All of the above</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(0)">← Back</button>
+      <button class="btn-next" onclick="advance(1)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 2: Muscle Health ───────────────────────────── -->
+  <div class="card" id="screen-2" style="display:none">
+    <div class="step-label">Step 2 of 6</div>
+    <h2 class="step-title">Muscle Health</h2>
+
+    <div class="question">
+      <p>Have you noticed weakness, fatigue during activity, or loss of muscle tone?</p>
+      <div class="option-group" data-key="muscleSymptoms" data-multi="false">
+        <button class="opt-btn" data-value="Yes, noticeably">Yes, noticeably</button>
+        <button class="opt-btn" data-value="Somewhat">Somewhat</button>
+        <button class="opt-btn" data-value="Not really">Not really</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>How much protein do you typically eat daily?</p>
+      <div class="option-group" data-key="proteinIntake" data-multi="false">
+        <button class="opt-btn" data-value="Less than 50g">Less than 50g</button>
+        <button class="opt-btn" data-value="50–100g">50–100g</button>
+        <button class="opt-btn" data-value="Over 100g">Over 100g</button>
+        <button class="opt-btn" data-value="Not sure">Not sure</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(1)">← Back</button>
+      <button class="btn-next" onclick="advance(2)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 3: Brain & Energy ──────────────────────────── -->
+  <div class="card" id="screen-3" style="display:none">
+    <div class="step-label">Step 3 of 6</div>
+    <h2 class="step-title">Brain &amp; Energy</h2>
+
+    <div class="question">
+      <p>How often do you experience brain fog or low mental energy?</p>
+      <div class="option-group" data-key="brainFog" data-multi="false">
+        <button class="opt-btn" data-value="Daily">Daily</button>
+        <button class="opt-btn" data-value="A few times a week">A few times a week</button>
+        <button class="opt-btn" data-value="Rarely">Rarely</button>
+        <button class="opt-btn" data-value="Never">Never</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>How has your sleep been during your weight loss journey?</p>
+      <div class="option-group" data-key="sleepQuality" data-multi="false">
+        <button class="opt-btn" data-value="Poor">Poor</button>
+        <button class="opt-btn" data-value="Fair">Fair</button>
+        <button class="opt-btn" data-value="Good">Good</button>
+        <button class="opt-btn" data-value="Excellent">Excellent</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(2)">← Back</button>
+      <button class="btn-next" onclick="advance(3)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 4: Gut Health ──────────────────────────────── -->
+  <div class="card" id="screen-4" style="display:none">
+    <div class="step-label">Step 4 of 6</div>
+    <h2 class="step-title">Gut Health</h2>
+
+    <div class="question">
+      <p>Which digestive symptoms have you experienced? <em>(select all that apply)</em></p>
+      <div class="option-group" data-key="digestiveSymptoms" data-multi="true">
+        <button class="opt-btn" data-value="Nausea">Nausea</button>
+        <button class="opt-btn" data-value="Bloating">Bloating</button>
+        <button class="opt-btn" data-value="Constipation">Constipation</button>
+        <button class="opt-btn" data-value="Diarrhea">Diarrhea</button>
+        <button class="opt-btn" data-value="None">None</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>Overall, how would you rate your gut comfort day to day?</p>
+      <div class="option-group" data-key="gutComfort" data-multi="false">
+        <button class="opt-btn" data-value="Uncomfortable most days">Uncomfortable most days</button>
+        <button class="opt-btn" data-value="Hit or miss">Hit or miss</button>
+        <button class="opt-btn" data-value="Generally fine">Generally fine</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(3)">← Back</button>
+      <button class="btn-next" onclick="advance(4)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 5: Skin & Recovery ─────────────────────────── -->
+  <div class="card" id="screen-5" style="display:none">
+    <div class="step-label">Step 5 of 6</div>
+    <h2 class="step-title">Skin &amp; Recovery</h2>
+
+    <div class="question">
+      <p>Have you noticed skin changes during your weight loss?</p>
+      <div class="option-group" data-key="skinChanges" data-multi="false">
+        <button class="opt-btn" data-value="Loose or sagging skin">Loose or sagging skin</button>
+        <button class="opt-btn" data-value="Dullness or dryness">Dullness or dryness</button>
+        <button class="opt-btn" data-value="Both">Both</button>
+        <button class="opt-btn" data-value="No changes">No changes</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <p>Are you currently taking collagen or any skin supplement?</p>
+      <div class="option-group" data-key="takingCollagen" data-multi="false">
+        <button class="opt-btn" data-value="Yes">Yes</button>
+        <button class="opt-btn" data-value="No">No</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(4)">← Back</button>
+      <button class="btn-next" onclick="advance(5)">Continue →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 6: Contact info ─────────────────────────────── -->
+  <div class="card" id="screen-6" style="display:none">
+    <div class="step-label">Step 6 of 6</div>
+    <h2 class="step-title">Almost There!</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:24px;line-height:1.55">
+      Enter your details below and we'll generate your personalized nutrition plan instantly.
+    </p>
+
+    <div class="question">
+      <p>First name</p>
+      <input class="text-input" id="inputName" type="text" placeholder="e.g. Sarah" autocomplete="given-name">
+      <div class="field-error" id="errorName">Please enter your first name.</div>
+    </div>
+
+    <div class="question">
+      <p>Email address</p>
+      <input class="text-input" id="inputEmail" type="email" placeholder="you@example.com" autocomplete="email">
+      <div class="field-error" id="errorEmail">Please enter a valid email address.</div>
+      <div class="input-hint">Your plan will be displayed on screen. We respect your privacy.</div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="goToStep(5)">← Back</button>
+      <button class="btn-submit" id="btnSubmit" onclick="submitQuiz()">Get My Personalized Plan →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: Loading ────────────────────────────────────── -->
+  <div class="card" id="screen-loading" style="display:none">
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <h3>Building your personalized plan…</h3>
+      <p>Dr. Nessim's AI is analyzing your responses across all four pillars. This takes about 15–20 seconds.</p>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: Error ──────────────────────────────────────── -->
+  <div class="card" id="screen-error" style="display:none">
+    <div class="error-screen">
+      <div class="error-icon">⚠️</div>
+      <h3>Something went wrong</h3>
+      <div class="error-box">
+        <strong>Plan generation failed</strong>
+        <span id="errorMessage">We couldn't reach the AI service. Please check your connection and try again.</span>
+      </div>
+      <button class="btn-retry" onclick="retrySubmit()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: Result ─────────────────────────────────────── -->
+  <div class="card" id="screen-result" style="display:none">
+    <div class="result-header">
+      <div class="label">Your Personalized Plan · Habthera Nutrition</div>
+      <h2>Your GLP-1 Nutrition Plan</h2>
+    </div>
+    <div class="result-body" id="resultBody"></div>
+    <div class="result-actions">
+      <button class="btn-print" onclick="window.print()">🖨 Download as PDF</button>
+      <button class="btn-restart" onclick="resetQuiz()">Start Over</button>
+    </div>
+  </div>
+
+  <script>
+    // ─── State ────────────────────────────────────────────────
+    let currentStep = 0;
+    const answers   = {};
+
+    const SCREENS = [
+      'screen-intro',
+      'screen-1', 'screen-2', 'screen-3',
+      'screen-4', 'screen-5', 'screen-6',
+      'screen-loading', 'screen-error', 'screen-result'
+    ];
+
+    // ─── Option button wiring ─────────────────────────────────
+    document.querySelectorAll('.option-group').forEach(group => {
+      const isMulti = group.dataset.multi === 'true';
+      group.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!isMulti) {
+            group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            answers[group.dataset.key] = btn.dataset.value;
+          } else {
+            btn.classList.toggle('selected');
+            const selected = [...group.querySelectorAll('.opt-btn.selected')].map(b => b.dataset.value);
+            answers[group.dataset.key] = selected;
+          }
+          group.classList.remove('required-error');
+        });
+      });
+    });
+
+    // ─── Navigation ───────────────────────────────────────────
+    function goToStep(step) {
+      SCREENS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+
+      if (step === 0) {
+        document.getElementById('screen-intro').style.display = 'block';
+        document.getElementById('progressWrap').classList.remove('visible');
+        currentStep = 0;
+        return;
+      }
+
+      const screenId = `screen-${step}`;
+      const el = document.getElementById(screenId);
+      if (el) el.style.display = 'block';
+
+      // Update progress bar
+      document.getElementById('progressWrap').classList.add('visible');
+      const pct = Math.round((step / 6) * 100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = `Step ${step} of 6`;
+      currentStep = step;
+      window.scrollTo(0, 0);
+    }
+
+    function advance(fromStep) {
+      // Validate all option groups on this step
+      const card = document.getElementById(`screen-${fromStep}`);
+      let valid = true;
+      card.querySelectorAll('.option-group').forEach(group => {
+        const isMulti = group.dataset.multi === 'true';
+        const key = group.dataset.key;
+        const hasSelection = isMulti
+          ? (Array.isArray(answers[key]) && answers[key].length > 0)
+          : !!answers[key];
+        if (!hasSelection) {
+          group.classList.add('required-error');
+          valid = false;
+        }
+      });
+      if (!valid) return;
+      goToStep(fromStep + 1);
+    }
+
+    // ─── Submit ───────────────────────────────────────────────
+    async function submitQuiz() {
+      const name  = document.getElementById('inputName').value.trim();
+      const email = document.getElementById('inputEmail').value.trim();
+      let valid = true;
+
+      if (!name) {
+        document.getElementById('errorName').classList.add('visible');
+        document.getElementById('inputName').classList.add('error');
+        valid = false;
+      } else {
+        document.getElementById('errorName').classList.remove('visible');
+        document.getElementById('inputName').classList.remove('error');
+      }
+
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!emailOk) {
+        document.getElementById('errorEmail').classList.add('visible');
+        document.getElementById('inputEmail').classList.add('error');
+        valid = false;
+      } else {
+        document.getElementById('errorEmail').classList.remove('visible');
+        document.getElementById('inputEmail').classList.remove('error');
+      }
+
+      if (!valid) return;
+
+      answers.userName  = name;
+      answers.userEmail = email;
+
+      // Track in Klaviyo
+      trackKlaviyo(name, email);
+
+      // Show loading
+      showScreen('screen-loading');
+
+      await callAPI(name, { ...answers });
+    }
+
+    function retrySubmit() {
+      showScreen('screen-loading');
+      callAPI(answers.userName, { ...answers });
+    }
+
+    // ─── API call — goes to our serverless function, NOT directly to Anthropic ──
+    async function callAPI(userName, answersPayload) {
+      try {
+        const res = await fetch('/api/generate-plan', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ userName, answers: answersPayload }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showError(data.error || 'Something went wrong. Please try again.');
+          return;
+        }
+
+        renderResult(data.plan);
+
+      } catch (err) {
+        showError('Could not connect to the server. Please check your connection and try again.');
+      }
+    }
+
+    // ─── Render result ────────────────────────────────────────
+    function renderResult(planHtml) {
+      document.getElementById('resultBody').innerHTML = planHtml;
+      showScreen('screen-result');
+    }
+
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      showScreen('screen-error');
+    }
+
+    function showScreen(id) {
+      SCREENS.forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.style.display = 'none';
+      });
+      document.getElementById('progressWrap').classList.remove('visible');
+      const target = document.getElementById(id);
+      if (target) target.style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    // ─── Klaviyo tracking ─────────────────────────────────────
+    function trackKlaviyo(name, email) {
+      try {
+        fetch('https://a.klaviyo.com/api/track', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: 'YOUR_KLAVIYO_PUBLIC_KEY',
+            event: 'Quiz Completed',
+            customer_properties: { '$email': email, '$first_name': name },
+            properties: { ...answers }
+          })
+        });
+      } catch(e) { /* non-blocking */ }
+    }
+
+    // ─── Reset ────────────────────────────────────────────────
+    function resetQuiz() {
+      Object.keys(answers).forEach(k => delete answers[k]);
+      document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      document.getElementById('inputName').value  = '';
+      document.getElementById('inputEmail').value = '';
+      goToStep(0);
+    }
+  </script>
+</body>
+</html>

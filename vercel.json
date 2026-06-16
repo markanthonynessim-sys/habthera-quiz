@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/generate-plan.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
+}
